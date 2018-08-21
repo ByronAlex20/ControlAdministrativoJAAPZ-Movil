@@ -7,7 +7,7 @@ import java.sql.ResultSet;
 
 public class ConexionPostgreSQL extends _Default implements Runnable{
     private Connection conn;
-    private String host = "192.168.101.17";
+    private String host = "172.31.9.155";
     private String base = "bd_jaapz";
     private int port = 5432;
     private String user = "postgres";

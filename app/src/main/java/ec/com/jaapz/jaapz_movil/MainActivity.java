@@ -1,6 +1,7 @@
 package ec.com.jaapz.jaapz_movil;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.design.widget.TextInputEditText;
@@ -17,38 +18,61 @@ import java.sql.ResultSet;
 
 import ec.com.jaapz.jaapz_movil.util.ConexionPostgreSQL;
 import ec.com.jaapz.jaapz_movil.util.ConexionSQLite;
+import ec.com.jaapz.jaapz_movil.util.ControllerHelper;
 
 public class MainActivity extends AppCompatActivity {
     Button btnLogin;
     Button btnRegistrar;
     TextInputEditText et_usuario;
+    ControllerHelper helper = new ControllerHelper();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         btnLogin = (Button)findViewById(R.id.btn_login);
         et_usuario = (TextInputEditText) findViewById(R.id.et_usuario);
-    }
-    public void ejecutarPrueba(){
-        try{
-            String dato = "";
-            ConexionPostgreSQL db = new ConexionPostgreSQL();
-            ResultSet resultSet = db.executeQuery("select id_usuario,nombres from seg_usuario");
-            if(resultSet != null){
-                while (resultSet.next()){
-                    dato = resultSet.getString("id_usuario");
-                    dato = dato + resultSet.getString("nombres");
-                }
-            }else{
-                Toast.makeText(this, "No tiene datos", Toast.LENGTH_SHORT).show();
-                Toast.makeText(this, db.get_mensaje(), Toast.LENGTH_SHORT).show();
+        btnLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                iniciarSesion();
             }
-            et_usuario.setText(dato);
+        });
+    }
+    public void iniciarSesion(){
+        try{
+            if (validarDatosInicio() == true){
+                Intent intent = new Intent(this,PrincipalActivity.class);
+                startActivity(intent);
+            }else{
+                et_usuario.setError("Usuario o Clave Incorrecto");
+            }
         }catch (Exception ex){
-            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
-
+    public boolean validarDatosInicio(){
+        try{
+            boolean bandera = false;
+            int cantidad = 0;
+            String cadena = "select count(*) as cantidad from seg_usuario where (cedula = '" + et_usuario.getText()
+                    + "' or usuario = '" + helper.Encriptar(et_usuario.getText().toString()) + "') and estado = 'A'";
+            ConexionPostgreSQL db = new ConexionPostgreSQL();
+            ResultSet resultSet = db.executeQuery(cadena);
+            if(resultSet != null){
+                while (resultSet.next()){
+                   cantidad = resultSet.getInt("cantidad");
+                }
+            }else{
+                Toast.makeText(this, db.get_mensaje(), Toast.LENGTH_SHORT).show();
+            }
+            if (cantidad == 0)
+                return false;
+            else
+                bandera = true;
+            return  bandera;
+        }catch (Exception ex){
+           return false;
+        }
+    }
     public void registrarSQLite(){
         ConexionSQLite cnn = new ConexionSQLite( this,"base_jaapz",null,1);
         SQLiteDatabase baseDatos = cnn.getWritableDatabase();//abrela base de datos en modo lectura-escritura
